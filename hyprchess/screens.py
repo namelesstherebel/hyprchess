@@ -34,7 +34,7 @@ HELP = """\
 
 [b]View[/b]
   ,  step back    .  step forward    Home  start    End  live
-  f  flip the board     c  next skin     t  show or hide the side panel
+  f  flip the board     c  next skin     t  side panel on or off
   s  save the game as PGN
   You cannot move pieces while reviewing an earlier position.
 
