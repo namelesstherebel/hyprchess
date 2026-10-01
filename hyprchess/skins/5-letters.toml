@@ -1,0 +1,22 @@
+# Plain letters on the two smallest board sizes, for fonts without chess glyphs.
+name = "Letters"
+
+[board]
+light = "#b89b72"
+dark = "#7d5a3c"
+
+[white]
+body = "#fffaf0"
+detail = "#9a8f80"
+
+[black]
+body = "#17171c"
+detail = "#6b6b7a"
+
+[glyphs]
+king = "K"
+queen = "Q"
+rook = "R"
+bishop = "B"
+knight = "N"
+pawn = "P"

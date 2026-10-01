@@ -1,0 +1,18 @@
+name = "Mono"
+
+[board]
+light = "#9a9a9a"
+dark = "#5a5a5a"
+cursor = "#ffd400"
+selected = "#00c2a8"
+check = "#ff4040"
+last_light = "#b8b070"
+last_dark = "#7d7640"
+
+[white]
+body = "#ffffff"
+detail = "#8c8c8c"
+
+[black]
+body = "#000000"
+detail = "#bdbdbd"

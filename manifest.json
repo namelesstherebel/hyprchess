@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.namelesstherebel.hyprchess",
+  "name": "hyprchess",
+  "version": "0.1.0",
+  "author": "namelesstherebel",
+  "license": "GPL-3.0-or-later",
+  "description": "Terminal chess: Stockfish, online play, clocks, captured material and custom skins",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "hyprchess",
+    "description": "Opens the hyprchess terminal chess game, or focuses it if it is already open",
+    "category": "Games",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

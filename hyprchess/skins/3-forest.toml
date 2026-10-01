@@ -1,0 +1,13 @@
+name = "Forest"
+
+[board]
+light = "#e3e6c8"
+dark = "#6f9156"
+
+[white]
+body = "#ffffff"
+detail = "#a3a78c"
+
+[black]
+body = "#1b1f18"
+detail = "#62705a"

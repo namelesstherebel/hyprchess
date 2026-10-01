@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Run hyprchess from this checkout with uv. Used by the Omarchy bar widget and
+# by `omarchy tui install`; no separate install step is needed.
+
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+
+if uv --version &>/dev/null; then
+  UV=(uv)
+elif command -v mise &>/dev/null && mise x uv -- uv --version &>/dev/null; then
+  UV=(mise x uv -- uv)
+else
+  echo "hyprchess needs uv (https://docs.astral.sh/uv/). On Omarchy: mise use -g uv"
+  read -n 1 -rsp "Press any key to close."
+  exit 1
+fi
+
+# Keep the virtualenv out of the plugin folder: Omarchy rejects plugin folders that contain symlinks.
+export PYTHONDONTWRITEBYTECODE=1
+export UV_PROJECT_ENVIRONMENT="${XDG_CACHE_HOME:-$HOME/.cache}/hyprchess/venv"
+
+"${UV[@]}" run --quiet --no-dev --project "$DIR" hyprchess "$@"
+status=$?
+if (( status != 0 )) && [[ -t 0 ]]; then
+  echo
+  read -n 1 -rsp "hyprchess exited with an error. Press any key to close."
+fi
+exit $status

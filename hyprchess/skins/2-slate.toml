@@ -1,0 +1,14 @@
+name = "Slate"
+
+[board]
+light = "#8fa3b8"
+dark = "#4f6379"
+cursor = "#f0b84a"
+
+[white]
+body = "#f4f7fb"
+detail = "#7d8794"
+
+[black]
+body = "#12161c"
+detail = "#5d6b7c"
