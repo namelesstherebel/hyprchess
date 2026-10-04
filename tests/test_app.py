@@ -33,6 +33,7 @@ async def until(pilot, condition, timeout=15.0):
 
 async def choose(pilot, app, option_id):
     """Highlight a title/menu option by id and press enter."""
+    await until(pilot, lambda: app.screen.query(OptionList))  # a dialog that was just pushed may not be built yet
     menu = app.screen.query_one(OptionList)
     menu.highlighted = menu.get_option_index(option_id)
     await pilot.press("enter")
