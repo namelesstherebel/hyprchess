@@ -7,6 +7,7 @@ import chess
 import pytest
 
 from hyprchess.app import ChessApp
+from hyprchess.board import TIERS, BoardView
 from hyprchess.game import Game, TimeControl
 from hyprchess.game_screen import GameScreen
 from hyprchess.screens import FormScreen, HelpScreen, HostScreen, JoinScreen, MenuScreen, TitleScreen
@@ -221,5 +222,79 @@ def test_online_resign_reaches_the_other_side():
             await choose(hp, host_app, "yes")
             await until(gp, lambda: guest.game.outcome() == ("1-0", "resignation"))
             assert host.game.outcome() == ("1-0", "resignation")
+
+    run(main())
+
+
+def test_mouse_moves_on_press_drags_and_cancels():
+    async def main():
+        app = ChessApp()
+        async with app.run_test(size=(120, 44)) as pilot:
+            await choose(pilot, app, "local")
+            await pilot.press("enter")
+            await pilot.pause()
+            screen, view = app.screen, app.screen.query_one(BoardView)
+            cw, ch = TIERS[view.tier]
+
+            def at(name):
+                sq = chess.parse_square(name)
+                return (2 + chess.square_file(sq) * cw + cw // 2, (7 - chess.square_rank(sq)) * ch + ch // 2)
+
+            def stack():
+                return [m.uci() for m in screen.game.board.move_stack]
+
+            # press picks up, the next press moves: nothing waits for a release
+            await pilot.mouse_down(view, offset=at("e2"))
+            assert screen.selected == chess.E2 and chess.E4 in screen.targets
+            await pilot.mouse_up(view, offset=at("e2"))
+            assert screen.selected == chess.E2
+            await pilot.mouse_down(view, offset=at("e4"))
+            assert stack() == ["e2e4"]
+            await pilot.mouse_up(view, offset=at("e4"))
+            # drag: press on the piece, release on the target
+            await pilot.mouse_down(view, offset=at("e7"))
+            await pilot.mouse_up(view, offset=at("e5"))
+            assert stack() == ["e2e4", "e7e5"]
+            # a second click on the held piece drops it; so does the right button; bad drops keep it held
+            await pilot.mouse_down(view, offset=at("g1"))
+            await pilot.mouse_up(view, offset=at("g5"))
+            assert screen.selected == chess.G1 and len(stack()) == 2
+            await pilot.mouse_down(view, offset=at("g1"))
+            await pilot.mouse_up(view, offset=at("g1"))
+            assert screen.selected is None
+            await pilot.mouse_down(view, offset=at("g1"))
+            await pilot.mouse_up(view, offset=at("g1"))
+            await pilot.mouse_down(view, offset=at("a5"), button=3)
+            assert screen.selected is None and len(stack()) == 2
+            # mouse and keyboard share the cursor
+            await pilot.mouse_down(view, offset=at("g1"))
+            await pilot.mouse_up(view, offset=at("g1"))
+            await pilot.press("up", "up", "left", "enter")
+            assert stack()[-1] == "g1f3"
+
+    run(main())
+
+
+@needs_engine
+def test_second_engine_from_engines_folder_is_offered_and_remembered(isolated_home):
+    folder = isolated_home / "XDG_CONFIG_HOME" / "hyprchess" / "engines"
+    folder.mkdir(parents=True)
+    shutil.copy(shutil.which("stockfish"), folder / "Mirror")
+
+    async def main():
+        app = ChessApp()
+        assert list(app.engines) == ["Mirror", "Stockfish"]
+        async with app.run_test(size=(120, 44)) as pilot:
+            await choose(pilot, app, "engine")
+            await until(pilot, lambda: isinstance(app.screen, FormScreen))
+            assert app.screen.rows[0].options == ["Mirror", "Stockfish"]
+            await pilot.press("right", "enter")  # switch opponent to Stockfish
+            await until(pilot, lambda: isinstance(app.screen, GameScreen))
+            screen = app.screen
+            assert app.engine_name == "Stockfish" and "Stockfish" in screen.names[chess.BLACK]
+            move(screen, "e2e4")
+            await until(pilot, lambda: len(screen.game.board.move_stack) == 2 and not screen.thinking)
+            assert app.load_state()["engine"] == "Stockfish"
+        assert ChessApp().config["setup"]["opponent"] == "Stockfish"
 
     run(main())

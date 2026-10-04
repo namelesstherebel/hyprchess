@@ -2,3 +2,115 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+dist/
+
+# ---------------------------------------------------------------------------
+# RELEASING A NEW VERSION TO THE OMARCHY PLUGIN MARKETPLACE
+# ---------------------------------------------------------------------------
+# Listing:  https://omarchyplugins.com/plugin.html?id=io.github.namelesstherebel.hyprchess
+# Registry: https://github.com/omacom/omarchy-plugin-marketplace
+# First listing: issue #9602, verified at commit 3ab5da3 (v0.1.0), 2026-10-01.
+#
+# Verification is bound to ONE exact commit. Any push to main after that
+# commit (even a README or .gitignore change) turns the listing badge from
+# "Snapshot verified" into "Update unverified" until a new commit is promoted.
+# The old snapshot stays listed in the meantime; nothing is delisted.
+# So: batch changes, and request re-verification once per release.
+#
+# 1. Bump the version in BOTH manifest.json ("version") and pyproject.toml.
+#    Never change the plugin id (io.github.namelesstherebel.hyprchess) or the
+#    repository URL: an update must keep the same plugin ID set.
+#
+# 2. Check locally before pushing:
+#      mise x uv -- uv run --group dev pytest -q
+#      omarchy plugin validate .
+#    validate rejects symlinks, so keep the venv out of this folder
+#    (the launcher uses ~/.cache/hyprchess/venv). README.md, LICENSE,
+#    manifest.json and preview.png must stay at the repository root.
+#
+# 3. Commit, push to main, then copy the full 40-character SHA of HEAD:
+#      git rev-parse HEAD
+#    Do not push anything else until the update is published, or the SHA
+#    in the request goes stale and promotion is blocked.
+#
+#    PyPI (every other system installs from there): after main is pushed,
+#      git tag v<version> && git push origin v<version>
+#    The CI workflow tests on Linux, macOS and Windows, then publishes the
+#    tag to PyPI by trusted publishing. A tag does not move main, so it
+#    does not disturb the marketplace SHA. __version__ in
+#    hyprchess/__init__.py must match too.
+#
+# 4. Open the "Plugin verification" form (NOT the "[Plugin]:" submission
+#    form, that one is only for new listings):
+#      https://github.com/omacom/omarchy-plugin-marketplace/issues/new?template=verify-plugin.yml
+#    - Verification action: "Verify and publish a newer upstream commit"
+#    - Plugin ID:           io.github.namelesstherebel.hyprchess
+#    - Repository URL:      https://github.com/namelesstherebel/hyprchess
+#    - Target commit:       the SHA from step 3
+#    - Tick the verification acknowledgment. Leave the standard installation
+#      acknowledgment unticked (hyprchess needs manual uv setup).
+#    Title starts with "[Verify]: ".
+#
+# 5. Wait for the two bot comments on that issue: "Marketplace validation"
+#    and "Automated security baseline". If one fails, fix the repository,
+#    push, then EDIT the same issue with the new HEAD SHA. Editing reruns
+#    the checks. Do not open a duplicate issue.
+#
+# 6. hyprchess always lands on "Manual review required", because the baseline
+#    detects three capabilities: remote-build (git clone in README),
+#    package-manager (the Stockfish install hint in hyprchess/app.py) and
+#    installer (install.sh). That is expected. A marketplace maintainer has
+#    to review and apply the "approved-and-verified" label; you cannot do
+#    that yourself. A new capability or a finding (new network calls, new
+#    downloads, sudo, more install paths) means a longer review, so say what
+#    changed and why in a comment on the issue.
+#
+# 7. Done when the bot posts "Published and verified" and the listing page
+#    shows "Snapshot verified" for the new commit.
+#
+# If the scanner policy changes without any code change here, use the same
+# form with "Verify the currently listed snapshot" and the listed SHA.
+#
+# RULES THAT FRAME ALL WORK BETWEEN RELEASES
+#
+# A. main IS the release channel. `omarchy plugin add` clones HEAD of the
+#    default branch and `omarchy plugin update` does `git fetch origin HEAD`
+#    plus `git merge --ff-only`. Neither looks at the verified commit or at
+#    the version string. So users receive whatever is on main the moment it
+#    is pushed, verified or not. Develop on a branch; merge to main only as
+#    a finished, tested release.
+#
+# B. Never force-push or rewrite main. Installed copies can only
+#    fast-forward; rewritten history breaks `omarchy plugin update` for
+#    every existing user.
+#
+# C. Every commit on main must pass `omarchy plugin validate .`. A failing
+#    update is rolled back on the user's machine and they stay stuck on the
+#    old version.
+#
+# D. The version is a free string (max 64 characters shown), no semver is
+#    enforced. Convention here: semver, bumped once per release, same value
+#    in manifest.json and pyproject.toml, plus a matching git tag.
+#
+# E. The plugin id is permanent and can never be reused or renamed.
+#    schemaVersion stays the number 1. No symlinks anywhere in the folder.
+#
+# F. Security baseline (static scan, SECURITY.md in the registry). These
+#    are findings and must never appear: curl or wget piped to a shell,
+#    building or running an external git repository that is not pinned to
+#    a full commit, `cargo install --git` without --rev, broad NOPASSWD
+#    sudoers rules, privileged kill using a PID file in /tmp.
+#    These are capabilities, each one adds maintainer review: installer,
+#    package-manager, privilege (any mention of sudo or pkexec, including
+#    in the README), remote-build, bundled-executable-binary,
+#    service-management, sudoers-modification. hyprchess has three today
+#    (see step 6). Avoid adding more; reducing them shortens review.
+#
+# G. One-click install on the listing (`omarchy plugin add ... --enable`)
+#    needs the "standard installation" acknowledgment in the same form and
+#    a maintainer's `standard-installation-approved` label. It is granted
+#    only with a passing baseline or an installer-only review, so
+#    package-manager and remote-build would have to go first.
+#
+# Full rules: SUBMISSION.md and VERIFICATION.md in the registry repository.
+# ---------------------------------------------------------------------------

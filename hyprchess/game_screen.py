@@ -82,7 +82,7 @@ class GameScreen(Screen):
             return self.given_names
         if self.mode == "local":
             return {chess.WHITE: "White", chess.BLACK: "Black"}
-        other = f"Stockfish {PRESETS[self.preset][0]}" if self.mode == "engine" else "Opponent"
+        other = f"{self.app.engine_name} {PRESETS[self.preset][0]}" if self.mode == "engine" else "Opponent"
         return {self.human: "You", not self.human: other}
 
     @property
@@ -148,7 +148,7 @@ class GameScreen(Screen):
         if outcome := self.game.outcome():
             return f"{outcome[0]} {outcome[1]}"
         if self.thinking:
-            return "Stockfish thinking…"
+            return f"{self.app.engine_name} thinking…"
         if self.mode == "online" and not self.connected:
             return "Opponent disconnected"
         if self.mode != "local":
@@ -243,6 +243,7 @@ class GameScreen(Screen):
             "mode": self.mode,
             "human": self.human,
             "preset": self.preset,
+            "engine": self.app.engine_name,
             "base": game.tc.base,
             "inc": game.tc.inc,
             "clock": [game.clock[chess.WHITE], game.clock[chess.BLACK]] if game.clock else None,
@@ -290,20 +291,25 @@ class GameScreen(Screen):
         self._select(None)
         self._refresh()
 
-    def action_select(self) -> None:
-        if not self.can_move:
-            return
-        board, sq = self.game.board, self.cursor
-        piece = board.piece_at(sq)
-        if self.selected is not None and sq in self.targets:
-            mover = board.piece_at(self.selected)
-            if mover.piece_type == chess.PAWN and chess.square_rank(sq) in (0, 7):
-                self.promote(self.selected, sq)
-            else:
-                self.play(chess.Move(self.selected, sq))
+    def pick(self, sq: int) -> None:
+        """Pick up the piece on sq if it belongs to the side to move, otherwise put down whatever is held."""
+        piece = self.game.board.piece_at(sq)
+        self._select(sq if piece and piece.color == self.game.board.turn else None)
+        self._refresh()
+
+    def move_to(self, sq: int) -> bool:
+        """Play the picked-up piece to sq. False if nothing is picked up or it cannot go there."""
+        if self.selected is None or sq not in self.targets:
+            return False
+        if self.game.board.piece_type_at(self.selected) == chess.PAWN and chess.square_rank(sq) in (0, 7):
+            self.promote(self.selected, sq)
         else:
-            self._select(sq if piece and piece.color == board.turn and sq != self.selected else None)
-            self._refresh()
+            self.play(chess.Move(self.selected, sq))
+        return True
+
+    def action_select(self) -> None:
+        if self.can_move and not self.move_to(self.cursor):
+            self.action_deselect() if self.cursor == self.selected else self.pick(self.cursor)
 
     @work
     async def promote(self, origin: int, target: int) -> None:
@@ -322,7 +328,7 @@ class GameScreen(Screen):
         self._changed()
         self.engine_move()
 
-    # ---- Stockfish
+    # ---- engine opponent
 
     @work
     async def engine_move(self) -> None:
@@ -332,6 +338,10 @@ class GameScreen(Screen):
         if not (engine := await self.app.get_engine()):
             return
         _, options, limit = PRESETS[self.preset]
+        options = {k: v for k, v in options.items() if k in engine.options}  # not every engine has every strength knob
+        if "UCI_Elo" in options:
+            elo = engine.options["UCI_Elo"]
+            options["UCI_Elo"] = min(max(options["UCI_Elo"], elo.min or 0), elo.max or options["UCI_Elo"])
         if game.clock:  # never think away more than a sliver of the remaining time
             limit = {**limit, "time": min(limit.get("time", 0.3), max(game.clock[game.board.turn] / 30, 0.05))}
         self.thinking, plies = True, len(game.board.move_stack)
@@ -343,7 +353,7 @@ class GameScreen(Screen):
                 self.hint = set()
         except chess.engine.EngineError as e:
             self.app.engine = None
-            self.notify(f"Stockfish stopped: {e}", severity="error")
+            self.notify(f"{self.app.engine_name} stopped: {e}", severity="error")
         finally:
             self.thinking = False
             self._changed()
@@ -361,7 +371,7 @@ class GameScreen(Screen):
             self.hint = {result.move.from_square, result.move.to_square}
         except chess.engine.EngineError as e:
             self.app.engine = None
-            self.notify(f"Stockfish stopped: {e}", severity="error")
+            self.notify(f"{self.app.engine_name} stopped: {e}", severity="error")
         finally:
             self.thinking = False
             self._refresh()

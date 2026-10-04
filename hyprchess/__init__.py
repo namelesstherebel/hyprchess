@@ -1,3 +1,3 @@
-"""hyprchess: terminal chess for Omarchy."""
+"""hyprchess: chess in your terminal."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

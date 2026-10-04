@@ -1,8 +1,8 @@
 <h1 align="center">hyprchess</h1>
 
 <p align="center">
-  <b>Chess in your terminal, built for Omarchy.</b><br>
-  Play Stockfish, a friend on the same keyboard, or a friend online, with clocks,<br>
+  <b>Chess in your terminal, on Linux, macOS and Windows.</b><br>
+  Play Stockfish or another engine, a friend on the same keyboard, or a friend online, with clocks,<br>
   captured material, full notation and skins you can make yourself.
 </p>
 
@@ -27,7 +27,27 @@
 
 ## Install
 
-hyprchess has two parts. Use either or both.
+### Any terminal: Linux, macOS, Windows
+
+hyprchess is a Python package. Pick whichever of these you already have:
+
+```
+uvx hyprchess              # run it without installing (uv)
+uv tool install hyprchess  # install the hyprchess command (uv)
+pipx install hyprchess     # install the hyprchess command (pipx)
+pip install hyprchess      # into the current Python environment
+```
+
+It needs Python 3.11 or newer and a terminal with 24-bit colour and mouse
+support: any current Linux terminal, Terminal.app, iTerm2, Ghostty, kitty,
+WezTerm, Alacritty or Windows Terminal. Update with `uv tool upgrade hyprchess`
+or `pipx upgrade hyprchess`; remove with `uv tool uninstall hyprchess` or
+`pipx uninstall hyprchess`.
+
+To play against the computer you also need a chess engine, see
+[Engines](#engines). Everything else works without one.
+
+On Omarchy there are two more ways in, below. Use either or both.
 
 ### Bar button (Omarchy plugin)
 
@@ -76,9 +96,8 @@ again focuses the game that is already running. Run `./install.sh` again after
   [textual](https://github.com/Textualize/textual) and
   [python-chess](https://github.com/niklasf/python-chess), pinned in `uv.lock`.
   On Omarchy: `mise use -g uv`.
-- **Stockfish** is optional and only needed to play against the computer or get
-  hints. hyprchess does not install it; it uses `stockfish` from your PATH, or
-  the engine you pass with `--engine /path/to/engine`.
+- **A chess engine** is optional and only needed to play against the computer
+  or get hints. hyprchess does not install one; see [Engines](#engines).
 - **Network**: besides that first dependency download, the game only opens a
   connection when you choose an online game.
 - **Files it writes**: `~/.config/hyprchess/` (settings, your skins),
@@ -87,6 +106,29 @@ again focuses the game that is already running. Run `./install.sh` again after
   `install.sh` adds one launcher entry and one icon under `~/.local/share/`.
   Nothing needs root and no existing configuration is changed.
 
+## Engines
+
+hyprchess plays against any [UCI](https://www.chessprogramming.org/UCI) engine
+and offers every one it finds under **Opponent** in the setup form.
+
+- **On your PATH.** These are found by name: `stockfish`, `lc0` (Leela Chess
+  Zero), `fairy-stockfish`, `komodo`, `berserk`, `ethereal`, `rubichess`,
+  `koivisto`, `viridithas` and `stormphrax`.
+- **In the engines folder.** Put any engine program in the folder printed by
+  `hyprchess --engines-dir` (`~/.config/hyprchess/engines/`) and it shows up
+  under its file name. This is the easy route on Windows: download Stockfish
+  from [stockfishchess.org/download](https://stockfishchess.org/download/) and
+  move the `.exe` there. On Linux and macOS the file must be executable.
+- **For one run.** `hyprchess --engine /path/to/engine`.
+
+Getting Stockfish: it is `stockfish` in Homebrew and in most Linux
+distributions' package repositories, and a download for every system on
+stockfishchess.org.
+
+The six difficulty levels use Stockfish's strength settings. An engine that
+lacks a setting ignores it, so with such an engine the Elo-limited levels only
+differ in thinking time.
+
 ## Game modes
 
 The title screen lists everything you can do. Move with the arrows or `j`/`k`
@@ -94,11 +136,11 @@ and press Enter.
 
 | Menu entry | What it does |
 | --- | --- |
-| **Play Stockfish** | A game against the engine, at the strength and time control you pick. |
+| **Play the computer** | A game against a chess engine, at the strength and time control you pick. |
 | **Two players, this keyboard** | Two people take turns on one machine. Press `f` to flip the board between moves. |
 | **Online: host a game** | Wait for a friend to connect to you. |
 | **Online: join a game** | Connect to a friend who is hosting. |
-| **Resume last game** | Carry on the unfinished game against Stockfish or a local opponent. |
+| **Resume last game** | Carry on the unfinished game against the engine or a local opponent. |
 | **Open a saved game** | Replay a game you saved, move by move. |
 | **Skin** | Left and right change the look of the board and pieces. |
 
@@ -112,7 +154,8 @@ Up and down pick a row, left and right change it, Enter starts. Your choices are
 remembered for next time.
 
 - **Play as**: White, Black or Random.
-- **Difficulty**: six levels of Stockfish.
+- **Opponent**: which engine to play, when more than one is installed.
+- **Difficulty**: six levels.
 
   | Level | How it plays |
   | --- | --- |
@@ -136,9 +179,13 @@ remembered for next time.
   fits, every time the terminal is resized. The three larger sizes use
   hand-drawn pixel pieces; small windows fall back to chess glyphs. When the
   window is too narrow for a side panel, the panel moves under the board.
-- **Keyboard or mouse.** Move the cursor with the arrows or `hjkl` and press
-  Enter to pick up a piece and again to drop it, or just click. `Esc` puts the
-  piece back.
+- **Keyboard or mouse, mixed freely.** Move the cursor with the arrows or
+  `hjkl` and press Enter to pick up a piece and again to drop it. `Esc` puts
+  the piece back.
+- **The mouse is built for fast games.** Click a piece and click its square, or
+  press on the piece, drag and let go. Either way the move is played the moment
+  the button goes down or comes up on the target, with no wait for a full
+  click. Clicking the held piece again, or the right button, puts it back.
 - **Legal moves are shown.** Picking up a piece tints every square it can go
   to, including castling and en passant squares. Illegal moves are simply not
   offered.
@@ -151,7 +198,7 @@ remembered for next time.
   <img src="docs/hint.png" alt="A hint from Stockfish: the suggested move's two squares are tinted purple" width="48%">
 </p>
 
-- **Hints.** `i` asks Stockfish for the best move and tints its two squares
+- **Hints.** `i` asks the engine for the best move and tints its two squares
   (right, above). Hints are off in online games.
 - **Undo and redo.** `u` takes back your last move (and the engine's reply);
   `r` puts it back. Playing a new move clears the redo history.
@@ -326,12 +373,14 @@ built-in one replaces it.
 
 | Key | Action |
 | --- | --- |
-| arrows / `hjkl`, mouse | move the cursor |
+| arrows / `hjkl` | move the cursor |
+| left click, or drag | pick up a piece, then drop it |
+| right click | put the piece back |
 | `enter` / `space` | pick up a piece, then drop it |
 | `esc` | put the piece back |
 | `u` / `r` | undo / redo |
 | `,` / `.` / `Home` / `End` | step through earlier positions |
-| `i` | hint from Stockfish |
+| `i` | hint from the engine |
 | `[` / `]` | easier / harder |
 | `f` | flip the board |
 | `c` | next skin |
@@ -353,13 +402,15 @@ work.
 
 Settings are remembered between runs in `~/.config/hyprchess/config.json`: the
 skin, your last setup choices and the last address you joined. You can also set
-`"engine": "/path/to/engine"` there to use a different UCI engine. Command-line
+`"engine": "/path/to/engine"` there to add a UCI engine. On Windows `~` is your
+user folder, `C:\Users\you`. Command-line
 options:
 
 ```
 hyprchess --engine /path/to/engine   # play against another UCI engine
 hyprchess --skin Slate               # start with a skin
 hyprchess --skins-dir                # print the folder custom skins go in
+hyprchess --engines-dir              # print the folder engines can be dropped in
 ```
 
 ## Development

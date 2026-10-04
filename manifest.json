@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "io.github.namelesstherebel.hyprchess",
   "name": "hyprchess",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "namelesstherebel",
   "license": "GPL-3.0-or-later",
-  "description": "Terminal chess: Stockfish, online play, clocks, captured material and custom skins",
+  "description": "Terminal chess: Stockfish and other engines, online play, clocks, captured material and custom skins",
   "kinds": [
     "bar-widget"
   ],

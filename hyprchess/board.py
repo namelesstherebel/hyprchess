@@ -95,10 +95,39 @@ class BoardView(Widget):
         out.append("  " + "".join(f"{f:^{cw}}" for f in files), label)
         return out
 
-    def on_click(self, event) -> None:
+    # ---- mouse: everything happens on the press, so a move never waits for the button to come back up
+
+    _was_selected = False  # the pressed piece was already picked up: releasing on it puts it down again
+
+    def _square(self, event) -> int | None:
         g = self.screen
         cw, ch = TIERS[self.tier]
         col, row = (event.x - 2) // cw, event.y // ch
         if event.x >= 2 and 0 <= col < 8 and 0 <= row < 8:
-            g.cursor = chess.square(7 - col if g.flipped else col, row if g.flipped else 7 - row)
-            g.action_select()
+            return chess.square(7 - col if g.flipped else col, row if g.flipped else 7 - row)
+        return None
+
+    def on_mouse_down(self, event) -> None:
+        """Left press: play the picked-up piece here, or pick up the piece under the pointer. Other buttons cancel."""
+        g = self.screen
+        if event.button != 1:
+            g.action_deselect()
+        elif (sq := self._square(event)) is not None and g.can_move:
+            g.cursor, self._was_selected = sq, sq == g.selected
+            if not g.move_to(sq):
+                g.pick(sq)
+                self.capture_mouse()  # so a drag that ends off the board still reaches on_mouse_up
+
+    def on_mouse_up(self, event) -> None:
+        """Release on another square finishes a drag; release on a piece that was already picked up drops it."""
+        g = self.screen
+        self.release_mouse()
+        if event.button != 1 or g.selected is None or not g.can_move:
+            return
+        sq = self._square(event)
+        if sq == g.selected:
+            if self._was_selected:
+                g.action_deselect()
+        elif sq in g.targets:
+            g.cursor = sq
+            g.move_to(sq)

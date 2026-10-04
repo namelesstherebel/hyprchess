@@ -1,11 +1,23 @@
 [project]
 name = "hyprchess"
-version = "0.1.0"
-description = "Terminal chess for Omarchy: Stockfish, online play, clocks and custom skins"
+version = "0.2.0"
+description = "Chess in your terminal: Stockfish and other UCI engines, online play, clocks, mouse and keyboard, custom skins"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
 dependencies = ["textual>=8,<9", "chess>=1.11,<2"]
+keywords = ["chess", "tui", "terminal", "textual", "stockfish", "uci"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Games/Entertainment :: Board Games",
+]
+
+[project.urls]
+Homepage = "https://github.com/namelesstherebel/hyprchess"
+Issues = "https://github.com/namelesstherebel/hyprchess/issues"
 
 [project.scripts]
 hyprchess = "hyprchess.__main__:main"
@@ -16,6 +28,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["hyprchess"]
+
+[tool.hatch.build.targets.sdist]
+include = ["hyprchess", "tests", "README.md", "LICENSE"]  # not the screenshots or the Omarchy plugin files
 
 [dependency-groups]
 dev = ["pytest>=8"]

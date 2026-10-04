@@ -28,7 +28,7 @@ HELP = """\
   Blue squares are the legal moves for the piece you picked up.
 
 [b]Game[/b]
-  u  undo your last move      r  redo it        i  hint from Stockfish
+  u  undo your last move      r  redo it        i  hint from the engine
   \\[  easier    ]  harder      x  resign         b  back to the menu
   Undo, redo, hints and difficulty are off in online games.
 
@@ -314,13 +314,13 @@ class TitleScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Center(Static(id="art"))
         yield Center(Static("H Y P R C H E S S", id="name"))
-        yield Center(Static("Chess for Omarchy", id="tag"))
+        yield Center(Static("Chess in your terminal", id="tag"))
         yield Center(self._menu())
         yield Footer()
 
     def _menu(self) -> OptionList:
         return OptionList(
-            Option("Play Stockfish", id="engine"),
+            Option("Play the computer", id="engine"),
             Option("Two players, this keyboard", id="local"),
             Option("Online: host a game", id="host"),
             Option("Online: join a game", id="join"),
@@ -384,19 +384,26 @@ class TitleScreen(Screen):
     @work
     async def flow_engine(self) -> None:
         app = self.app
-        if not await app.get_engine():
-            app.notify(app.engine_error, title="Stockfish unavailable", severity="error", timeout=10)
+        saved, engines = app.config["setup"], list(app.engines)
+        if engines and saved.get("opponent") in engines:
+            app.engine_name = saved["opponent"]
+        if not await app.get_engine():  # fail before the form, not after it
+            app.notify(app.engine_error, title="No engine", severity="error", timeout=12)
             return
-        saved = app.config["setup"]
         levels = [name for name, _, _ in PRESETS]
         rows = [
+            Row("engine", "Opponent", engines, engines.index(app.engine_name), show=lambda _: len(engines) > 1),
             Row("side", "Play as", SIDES, saved.get("side", 0) % 3),
             Row("level", "Difficulty", levels, saved.get("level", 2) % len(levels)),
             *time_rows(saved),
         ]
-        if (values := await app.push_screen_wait(FormScreen("Play Stockfish", rows))) is None:
+        if (values := await app.push_screen_wait(FormScreen("Play the computer", rows))) is None:
             return
-        app.remember(values)
+        app.engine_name = engines[values.pop("engine")]
+        app.remember({**values, "opponent": app.engine_name})
+        if not await app.get_engine():
+            app.notify(app.engine_error, title="No engine", severity="error", timeout=12)
+            return
         app.start_game(Game(time_control(values)), "engine", human=pick_side(values["side"]), preset=values["level"])
 
     @work

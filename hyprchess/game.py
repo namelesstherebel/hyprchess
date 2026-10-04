@@ -112,6 +112,9 @@ class Game:
 
     def history(self) -> tuple[list[str], dict[chess.Color, list[int]]]:
         """SAN for every move, and the piece types each colour has lost to captures."""
+        key = tuple(self.board.move_stack)  # replaying is slow and this runs on every redraw, so keep the last answer
+        if getattr(self, "_history", (None,))[0] == key:
+            return self._history[1]
         replay, sans = chess.Board(), []
         lost: dict[chess.Color, list[int]] = {chess.WHITE: [], chess.BLACK: []}
         for move in self.board.move_stack:
@@ -122,6 +125,7 @@ class Game:
             replay.push(move)
         for pieces in lost.values():
             pieces.sort(key=VALUE.get, reverse=True)
+        self._history = (key, (sans, lost))
         return sans, lost
 
     def at(self, ply: int) -> chess.Board:
