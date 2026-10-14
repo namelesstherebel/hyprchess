@@ -19,6 +19,26 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          actual="$(git rev-parse HEAD)"
+          if [ "$actual" != "$EXPECTED_HEAD" ]; then
+            echo "::error::Checked out $actual but expected $EXPECTED_HEAD"
+            exit 1
+          fi
+          {
+            echo "### Exact head"
+            echo "- SHA: $actual"
+            echo "- Run ID: $GITHUB_RUN_ID"
+            echo "- Attempt: $GITHUB_RUN_ATTEMPT"
+            echo "- Platform: $RUNNER_OS"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: astral-sh/setup-uv@v6
       - run: uv run --python ${{ matrix.python }} --group dev pytest -q
 
